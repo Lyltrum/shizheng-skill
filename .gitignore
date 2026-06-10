@@ -1,0 +1,11 @@
+node_modules/
+*.log
+.DS_Store
+.env
+
+# Per-user data lives in ~/.shizheng/, never in the repo — but guard against
+# accidental local copies landing in the tree.
+config.json
+state.json
+.shizheng/
+_*.json
