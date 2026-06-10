@@ -1,5 +1,7 @@
 # 时政简报 Skill（China Politics Brief for Claude）
 
+> 仓库：https://github.com/Lyltrum/shizheng-skill ｜ License: MIT
+
 一个让 Claude 帮你**获取并整理中国时政信息、生成每日时政简报**的 skill。聚合多个权威时政源，可按时政简报、分源浏览、逐条全文查看。
 
 > A Claude skill that aggregates authoritative Chinese current-affairs sources
@@ -31,7 +33,17 @@
 
 ## 安装
 
-把整个 `shizheng/` 文件夹放进你的 skills 目录：
+一键 clone 到 Claude Code 的用户级 skills 目录：
+
+```bash
+# macOS / Linux
+git clone https://github.com/Lyltrum/shizheng-skill ~/.claude/skills/shizheng
+
+# Windows (PowerShell)
+git clone https://github.com/Lyltrum/shizheng-skill "$env:USERPROFILE\.claude\skills\shizheng"
+```
+
+或手动把整个文件夹放进 skills 目录（目录名用 `shizheng`）：
 
 | 客户端 | 路径 |
 |--------|------|
