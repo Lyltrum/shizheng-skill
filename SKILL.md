@@ -33,6 +33,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/fetch-brief.mjs"
 - `--limit 30` — 央视要闻条数上限（覆盖偏好 `cctvLimit`）。
 - `--full` / `--brief` — 本次强制 全文 / 只摘要（覆盖偏好 `detail`）。
 - `--all` — 本次绕过去重，显示全部。
+- `--save <目录>` — **直接把简报渲染成 Markdown 写入该目录**（归档/省 token 用，见下方"保存/归档"）。
 - `--reset` — 清空去重记录后退出。
 
 > 路径用正斜杠 `/`，三平台通用。若 `${CLAUDE_SKILL_DIR}` 未展开，用 skill 目录绝对路径替换。
@@ -110,6 +111,24 @@ node "${CLAUDE_SKILL_DIR}/scripts/fetch-brief.mjs" --config-set detail=full scop
 - 查看当前偏好：`--show-config`。
 
 改完确认一句改了什么。注意区分**长期偏好**（用 `--config-set`）和**仅这一次**（用 CLI 标志）。
+
+### 保存 / 归档（省 token，重要）
+
+当用户要**保存 / 归档 / 存到 Obsidian / 存到某文件夹**时，**不要**先把全文 JSON 读进上下文再复述——那会浪费大量 token。改走 `--save`，让脚本直接渲染落盘：
+
+```bash
+node "${CLAUDE_SKILL_DIR}/scripts/fetch-brief.mjs" --save "<目标目录>"
+```
+
+- 脚本会抓取（自动用**完整正文 + 完整快照**，即 full、不去重）、渲染成带 frontmatter 的 Markdown 笔记 `YYYY-MM-DD-时政简报.md` 写入该目录，**全文不经过你的上下文**。
+- 它只回一份**很小的格式自检报告**：`{ status:"saved", file, ok, issues[], stats:{bytes,headingCount,totalItems,sources[]} }`。
+
+**保存后做一次"粗略格式审查"（也要省 token）**：
+1. 读这份报告：`ok` 为 `true` 且 `issues` 为空 → 告诉用户"已保存到 `<file>`，格式正常（联播 N 条 / 央视 M 条）"。
+2. `ok` 为 `false` → 把 `issues` 念给用户（如标题异常、条目数与标题数不一致、某源失败）。
+3. 可选：再 `Read` 笔记**前 ~20 行**确认 frontmatter 与首条渲染——**只读开头，不要整篇读回**。
+
+> 目标目录用户没给就问一句（如某个 Obsidian 库路径）。
 
 ### 绝对规则
 

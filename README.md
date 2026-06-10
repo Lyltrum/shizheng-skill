@@ -70,8 +70,16 @@ node scripts/fetch-brief.mjs --date 20260609   # 指定新闻联播日期
 node scripts/fetch-brief.mjs --source cctv-china   # 只抓某一源
 node scripts/fetch-brief.mjs --full            # 本次强制全文（--brief 反之）
 node scripts/fetch-brief.mjs --all             # 本次绕过去重，显示全部
+node scripts/fetch-brief.mjs --save ~/notes    # 渲染成 Markdown 笔记直接写入目录
 node scripts/fetch-brief.mjs --reset           # 清空去重记录
 ```
+
+### 保存 / 归档（省 token）
+
+`--save <目录>` 让脚本**自己**把简报渲染成带 frontmatter 的 Markdown 笔记
+（`YYYY-MM-DD-时政简报.md`，完整正文 + 完整快照）写入目录，**全文不经过模型上下文**，
+只返回一份很小的格式自检报告（`ok` / `issues` / 条目数 / 字节数）。配合 Obsidian
+做每日时政归档非常省 token——用 Claude 时直接说"把今天的时政简报存到 `<目录>`"即可。
 
 ### 个人偏好
 

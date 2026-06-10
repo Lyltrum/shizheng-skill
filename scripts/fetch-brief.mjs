@@ -31,14 +31,17 @@
 //   status: ok | notfound | error
 // ============================================================================
 
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
 import { fetchXinwenlianbo } from './sources/xinwenlianbo.mjs';
 import { fetchCctvChina, enrichBodies } from './sources/cctv-china.mjs';
 import { loadState, saveState, resetState, dedupSource } from './state.mjs';
 import { loadConfig, setConfig } from './config.mjs';
+import { renderNote, lintNote } from './render.mjs';
 
 function parseArgs(argv) {
   const args = {
-    date: null, source: null, limit: null,
+    date: null, source: null, limit: null, save: null,
     all: false, reset: false, brief: false, full: false,
     showConfig: false, configSet: null,
   };
@@ -47,6 +50,7 @@ function parseArgs(argv) {
     if (a === '--date') args.date = argv[++i];
     else if (a === '--source') args.source = argv[++i];
     else if (a === '--limit') args.limit = parseInt(argv[++i], 10) || null;
+    else if (a === '--save') args.save = argv[++i];
     else if (a === '--all' || a === '--no-dedup') args.all = true;
     else if (a === '--brief') args.brief = true;
     else if (a === '--full') args.full = true;
@@ -78,9 +82,11 @@ async function main() {
   }
 
   // --- resolve effective settings: saved config, then CLI overrides ---
+  // --save archives a COMPLETE snapshot: force full bodies and ignore dedup
+  // (unless the user explicitly overrides with --brief).
   const cfg = await loadConfig();
-  const detail = args.full ? 'full' : args.brief ? 'brief' : cfg.detail;
-  const dedup = args.all ? false : cfg.dedup;
+  const detail = args.full ? 'full' : args.brief ? 'brief' : (args.save ? 'full' : cfg.detail);
+  const dedup = (args.save || args.all) ? false : cfg.dedup;
   const limit = args.limit || cfg.cctvLimit;
   const resolved = { detail, scope: cfg.scope, cctvLimit: limit, dedup };
 
@@ -113,13 +119,26 @@ async function main() {
     if (cctv && cctv.items.length > 0) await enrichBodies(cctv.items);
   }
 
-  const out = {
+  const brief = {
     generatedAt: new Date().toISOString(),
     deduped: dedup,
     config: resolved,
     sources,
   };
-  process.stdout.write(JSON.stringify(out, null, 2) + '\n');
+
+  // --save: render the note to a file in the script (full text never enters the
+  // model's context) and emit only a compact format-check report.
+  if (args.save) {
+    const { markdown, filename } = renderNote(brief);
+    const file = join(args.save, filename);
+    await mkdir(args.save, { recursive: true });
+    await writeFile(file, markdown);
+    const report = lintNote(brief, markdown);
+    process.stdout.write(JSON.stringify({ status: 'saved', file, ...report }, null, 2) + '\n');
+    return;
+  }
+
+  process.stdout.write(JSON.stringify(brief, null, 2) + '\n');
 }
 
 main().catch((err) => {

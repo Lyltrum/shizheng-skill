@@ -13,7 +13,7 @@ function parsePage(html, date) {
   let m;
   while ((m = articleRe.exec(html)) !== null) {
     const a = m[1];
-    const itemTitle = stripHtml(firstMatch(/<h[23][^>]*>([\s\S]*?)<\/h[23]>/, a));
+    let itemTitle = stripHtml(firstMatch(/<h[23][^>]*>([\s\S]*?)<\/h[23]>/, a));
 
     let bodyHtml = firstMatch(/class="content-body"[^>]*>([\s\S]*?)<\/div>/, a);
     if (!bodyHtml) bodyHtml = firstMatch(/class="article-content"[^>]*>([\s\S]*?)<\/div>/, a);
@@ -21,6 +21,14 @@ function parsePage(html, date) {
 
     if (!body || body.length < 10) continue; // skip header / date container blocks
     if (!itemTitle) continue;
+
+    // The archive occasionally fails to load an item's title and shows an error
+    // placeholder ("对不起，可能是网络原因..."), while the body is intact. Fall back
+    // to the first clause of the body so the item still gets a meaningful title.
+    if (/对不起|请稍后|网络原因|无此页面/.test(itemTitle)) {
+      const clause = (body.split(/[。！？]/)[0] || '').trim();
+      itemTitle = clause ? clause.slice(0, 30) + (clause.length > 30 ? '…' : '') : '（原标题缺失）';
+    }
 
     items.push({ index: items.length + 1, title: itemTitle, body });
   }
